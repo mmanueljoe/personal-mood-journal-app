@@ -1,0 +1,14 @@
+{
+  "name": "personal-mood-journal-app",
+  "version": "1.0.0",
+  "description": "A Personal Mood Journal App Built with TypeScript",
+  "main": "index.js",
+  "repository": "https://github.com/mmanueljoe/personal-mood-journal-app.git",
+  "author": "mmanueljoe <emmanuelletsu18@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "eslint": "^9.39.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
