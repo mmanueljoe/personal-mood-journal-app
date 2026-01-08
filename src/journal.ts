@@ -23,22 +23,25 @@ export interface JournalEntry {
     timestamp: number;
 }
 
+export type Journal = JournalEntry[];
+
 
 // === CORE LOGIC ===
 
 // create entries
-let entries: JournalEntry[] = [];
-function addEntry(entry: JournalEntry): JournalEntry {
+let entries: Journal = [];
+
+function addEntry(entry: Partial<JournalEntry>): JournalEntry {
     // generate a unique id
     const entryId: string = crypto.randomUUID();
 
     // create a new entry
     const newEntry: JournalEntry = {
-        id: entryId,
-        title: entry.title,
-        content: entry.content,
-        mood: entry.mood,
-        timestamp: Date.now(),
+        id: entry.id || entryId,
+        title: entry.title ?? 'Untitled Entry',
+        content: entry.content ?? 'No content',
+        mood: entry.mood ?? Mood.HAPPY,
+        timestamp: entry.timestamp ?? Date.now(),
     };
 
     // add the new entry to the entries array
@@ -52,42 +55,41 @@ function addEntry(entry: JournalEntry): JournalEntry {
 }
 
 // read/retrieve entries
-function getEntries(): JournalEntry[]{
+function getEntries(): Journal {
     // get the entries from localStorage
     const storedEntries = getEntriesFromLocalStorage();
     entries = storedEntries;
 
-    
+    // return the entries
     return entries;
 }
 
 // update entries
-function updateEntry(entryId: string): JournalEntry | null {
+function updateEntry(entryId: string, entry: Partial<JournalEntry>): JournalEntry | null {
     // find the entry by id
-    const entry = entries.find(entry => entry.id === entryId);
+    const existingEntry = entries.find(e => e.id === entryId);
 
-    if (!entry) return null;
+    if (!existingEntry) return null;
 
     // update the entry
-    entry.title = entry.title;
-    entry.content = entry.content;
-    entry.mood = entry.mood;
-    entry.timestamp = Date.now();
+    existingEntry.title = entry.title ?? existingEntry.title;
+    existingEntry.content = entry.content ?? existingEntry.content;
+    existingEntry.mood = entry.mood ?? existingEntry.mood;
+    existingEntry.timestamp = entry.timestamp ?? Date.now();
 
-    // update the entry in the entries array
-    entries = entries.map(e => e.id === entryId ? entry : e);
+
 
     // save to localStorage
     saveEntriesToLocalStorage(entries);
 
     // return the updated entry
-    return entry;
+    return existingEntry;
 }
 
 // delete entries
 function deleteEntry(entryId: string): boolean {
     // find the entry by id
-    const entry = entries.find(entry => entry.id === entryId);
+    const entry = entries.find(e => e.id === entryId);
     if (!entry) return false;
 
     // delete the entry from the entries array
@@ -99,7 +101,17 @@ function deleteEntry(entryId: string): boolean {
 }
 
 // filter entries
-function filterEntries(mood: Mood): JournalEntry[] {
+function filterEntries(mood: Mood): Journal {
     // filter the entries by mood
     return entries.filter(e => e.mood === mood);
 }
+
+
+// generic utility function
+function findByProperty<T>(list: T[], key: keyof T, value: T[keyof T]): T | undefined {
+    // find the item by property
+    return list.find(item => item[key] === value);
+}
+
+
+export { addEntry, getEntries, updateEntry, deleteEntry, filterEntries, findByProperty };

@@ -1,4 +1,4 @@
-import type { JournalEntry } from "./journal.js";
+import type { Journal, JournalEntry } from "./journal.js";
 
 // STORAGE KEYS
 const STORAGE_KEY = {
@@ -6,20 +6,21 @@ const STORAGE_KEY = {
     PREFERENCES: "preferences",
 }
 
-
+// === STORAGE FUNCTIONS ===
 // save entries to localStorage
-function saveEntriesToLocalStorage(entries: JournalEntry[]): void {
+function saveEntriesToLocalStorage(entries: Journal): void {
     // save the entries to localStorage
     localStorage.setItem(STORAGE_KEY.MOOD_ENTRIES, JSON.stringify(entries));
 }
 
 // get entries from localStorage
-function getEntriesFromLocalStorage(): JournalEntry[] {
+function getEntriesFromLocalStorage(): Journal {
     // get the entries from localStorage
     const storedEntries = localStorage.getItem(STORAGE_KEY.MOOD_ENTRIES);
 
-    // parse the entries from localStorage
-    return storedEntries ? JSON.parse(storedEntries) : [];
+
+    // parse the entries from localStorage and assert the type
+    return storedEntries ? JSON.parse(storedEntries) as Journal : [];
 }
 
 
