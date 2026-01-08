@@ -1,11 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Mood Journal App</title>
-</head>
-<body>
-    
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <title>My Journal</title>
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <!-- header -->
+        <h1>My Journal</h1>
+        <input type="search" placeholder="Search entries..." />
+        <button id="theme-toggle-btn"></button>
+      </header>
+
+      <!-- stats -->
+      <section class="stats"></section>
+
+      <!-- entries container -->
+      <main id="entries-container"></main>
+
+      <!-- add entry form -->
+       <div class="add-entry-btn-container">
+           <button id="add-entry-btn" aria-label="Add Entry" type="button">
+             <svg
+               xmlns="http://www.w3.org/2000/svg"
+               width="24"
+               height="24"
+               viewBox="0 0 24 24"
+               fill="none"
+               stroke="currentColor"
+               stroke-width="2"
+               stroke-linecap="round"
+               stroke-linejoin="round"
+               class="lucide lucide-plus-icon lucide-plus"
+             >
+               <path d="M5 12h14" />
+               <path d="M12 5v14" />
+             </svg>
+           </button>
+       </div>
+
+      <!-- form modal -->
+      <div id="entry-form-modal" class="hidden">
+        <!-- form will rendered here -->
+      </div>
+    </div>
+    <script src="dist/ui.js" type="module"></script>
+    <script src="dist/index.js" type="module"></script>
+  </body>
 </html>

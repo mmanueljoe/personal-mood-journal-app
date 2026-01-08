@@ -1,117 +1,128 @@
-import { saveEntriesToLocalStorage, getEntriesFromLocalStorage } from "./storage.js";
+import {
+  saveEntriesToLocalStorage,
+  getEntriesFromLocalStorage,
+} from "./storage.js";
 
 // Mood Enum
-enum Mood {
-    HAPPY = 'happy',
-    SAD = 'sad',
-    ANGRY = 'angry',
-    BORED = 'bored',
-    CURIOUS = 'curious',
-    EXCITED = 'excited',
-    FRUSTRATED = 'frustrated',
-    CONFUSED = 'confused',
+export enum Mood {
+  HAPPY = "happy",
+  SAD = "sad",
+  ANGRY = "angry",
+  BORED = "bored",
+  CURIOUS = "curious",
+  EXCITED = "excited",
+  FRUSTRATED = "frustrated",
+  CONFUSED = "confused",
 }
-
 
 // === MODELS ===
 // Journal Entry Model
 export interface JournalEntry {
-    id: string;
-    title: string;
-    content: string;
-    mood: Mood;
-    timestamp: number;
+  id: string;
+  title: string;
+  content: string;
+  mood: Mood;
+  timestamp: number;
 }
 
 export type Journal = JournalEntry[];
-
 
 // === CORE LOGIC ===
 
 // create entries
 let entries: Journal = [];
 
-function addEntry(entry: Partial<JournalEntry>): JournalEntry {
-    // generate a unique id
-    const entryId: string = crypto.randomUUID();
+export function addEntry(entry: Partial<JournalEntry>): JournalEntry {
+  // load existing entries
+  entries = getEntriesFromLocalStorage();
 
-    // create a new entry
-    const newEntry: JournalEntry = {
-        id: entry.id || entryId,
-        title: entry.title ?? 'Untitled Entry',
-        content: entry.content ?? 'No content',
-        mood: entry.mood ?? Mood.HAPPY,
-        timestamp: entry.timestamp ?? Date.now(),
-    };
+  // generate a unique id
+  const entryId: string = crypto.randomUUID();
 
-    // add the new entry to the entries array
-    entries.push(newEntry);
+  // create a new entry
+  const newEntry: JournalEntry = {
+    id: entry.id || entryId,
+    title: entry.title ?? "Untitled Entry",
+    content: entry.content ?? "No content",
+    mood: entry.mood ?? Mood.HAPPY,
+    timestamp: entry.timestamp ?? Date.now(),
+  };
 
-    // save to localStorage
-    saveEntriesToLocalStorage(entries);
+  // add the new entry to the entries array
+  entries.push(newEntry);
 
-    // return the new entry
-    return newEntry;
+  // save to localStorage
+  saveEntriesToLocalStorage(entries);
+
+  // return the new entry
+  return newEntry;
 }
 
 // read/retrieve entries
-function getEntries(): Journal {
-    // get the entries from localStorage
-    const storedEntries = getEntriesFromLocalStorage();
-    entries = storedEntries;
+export function getEntries(): Journal {
+  // get the entries from localStorage
+  const storedEntries = getEntriesFromLocalStorage();
+  entries = storedEntries;
 
-    // return the entries
-    return entries;
+  // return the entries
+  return entries;
 }
 
 // update entries
-function updateEntry(entryId: string, entry: Partial<JournalEntry>): JournalEntry | null {
-    // find the entry by id
-    const existingEntry = entries.find(e => e.id === entryId);
+export function updateEntry(
+  entryId: string,
+  entry: Partial<JournalEntry>
+): JournalEntry | null {
+  // load existing entries
+  entries = getEntriesFromLocalStorage();
 
-    if (!existingEntry) return null;
+  // find the entry by id
+  const existingEntry = entries.find((e) => e.id === entryId);
 
-    // update the entry
-    existingEntry.title = entry.title ?? existingEntry.title;
-    existingEntry.content = entry.content ?? existingEntry.content;
-    existingEntry.mood = entry.mood ?? existingEntry.mood;
-    existingEntry.timestamp = entry.timestamp ?? Date.now();
+  if (!existingEntry) return null;
 
+  // update the entry
+  existingEntry.title = entry.title ?? existingEntry.title;
+  existingEntry.content = entry.content ?? existingEntry.content;
+  existingEntry.mood = entry.mood ?? existingEntry.mood;
+  existingEntry.timestamp = entry.timestamp ?? Date.now();
 
+  // save to localStorage
+  saveEntriesToLocalStorage(entries);
 
-    // save to localStorage
-    saveEntriesToLocalStorage(entries);
-
-    // return the updated entry
-    return existingEntry;
+  // return the updated entry
+  return existingEntry;
 }
 
 // delete entries
-function deleteEntry(entryId: string): boolean {
-    // find the entry by id
-    const entry = entries.find(e => e.id === entryId);
-    if (!entry) return false;
+export function deleteEntry(entryId: string): boolean {
+  // load existing entries
+  entries = getEntriesFromLocalStorage();
 
-    // delete the entry from the entries array
-    entries = entries.filter(e => e.id !== entryId);
+  // find the entry by id
+  const entry = entries.find((e) => e.id === entryId);
+  if (!entry) return false;
 
-    // save to localStorage
-    saveEntriesToLocalStorage(entries);
-    return true;
+  // delete the entry from the entries array
+  entries = entries.filter((e) => e.id !== entryId);
+
+  // save to localStorage
+  saveEntriesToLocalStorage(entries);
+  return true;
 }
 
 // filter entries
-function filterEntries(mood: Mood): Journal {
-    // filter the entries by mood
-    return entries.filter(e => e.mood === mood);
+export function filterEntries(mood: Mood): Journal {
+  // filter the entries by mood
+  return entries.filter((e) => e.mood === mood);
 }
-
 
 // generic utility function
-function findByProperty<T>(list: T[], key: keyof T, value: T[keyof T]): T | undefined {
-    // find the item by property
-    return list.find(item => item[key] === value);
+export function findByProperty<T>(
+  list: T[],
+  key: keyof T,
+  value: T[keyof T]
+): T | undefined {
+  // find the item by property
+  return list.find((item) => item[key] === value);
 }
-
-
-export { addEntry, getEntries, updateEntry, deleteEntry, filterEntries, findByProperty };
