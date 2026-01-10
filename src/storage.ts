@@ -24,3 +24,19 @@ export function getEntriesFromLocalStorage(): Journal {
 }
 
 
+// save preferences to localStorage (theme)
+export function savePreferencesToLocalStorage(theme: "system" | "light" | "dark"): void {
+    // save the preferences to localStorage
+    localStorage.setItem(STORAGE_KEY.PREFERENCES, JSON.stringify({ theme }));
+}
+
+// get preferences from localStorage
+export function getPreferencesFromLocalStorage(): { theme: "system" | "light" | "dark" } {
+    // get the preferences from localStorage
+    const storedPreferences = localStorage.getItem(STORAGE_KEY.PREFERENCES);
+
+    // parse the preferences from localStorage and assert the type
+    return storedPreferences ? JSON.parse(storedPreferences) as { theme: "system" | "light" | "dark" } : { theme: "system" };
+}
+
+

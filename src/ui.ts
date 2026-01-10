@@ -2,6 +2,7 @@ import { getElementsByType, debounce, formatDate } from "./utils.js";
 import { findByProperty, type Journal, type JournalEntry } from "./journal.js";
 import * as journal from "./journal.js";
 import { Mood } from "./journal.js";
+import { getPreferencesFromLocalStorage, savePreferencesToLocalStorage } from "./storage.js";
 
 // elements
 export const elements = {
@@ -14,6 +15,8 @@ export const elements = {
   deleteBtn: getElementsByType("class", "delete-btn"),
   searchInput: getElementsByType("id", "search-input"),
   moodFilter: getElementsByType("id", "mood-filter"),
+  themeToggleBtnDesktop: getElementsByType("id", "theme-toggle-btn-desktop"),
+  themeToggleBtnMobile: getElementsByType("id", "theme-toggle-btn-mobile"),
 };
 
 // theme toggle button
@@ -21,22 +24,42 @@ export function toggleTheme(): void {
   // toggle the theme
   document.body.classList.toggle("dark");
 
-  // save the theme to localStorage
-  // localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+  // Update icons
+  updateThemeIcons();
 
-  // update the theme toggle button icon
-  const themeToggleBtn = document.getElementById("theme-toggle-btn");
-  if (themeToggleBtn) {
-    themeToggleBtn.innerHTML = document.body.classList.contains("dark")
-      ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon-icon lucide-moon"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>'
-      : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-icon lucide-sun"><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"/><path d="M12 1v2"/><path d="M12 21v2"/><path d="M4.22 4.22l1.42 1.42"/><path d="M18.36 18.36l1.42 1.42"/><path d="M1 12h2"/><path d="M21 12h2"/><path d="M4.22 19.78l1.42-1.42"/><path d="M18.36 5.64l1.42-1.42"/></svg>';
-  }
+  // save the theme to localStorage
+  const currentTheme = document.body.classList.contains("dark") ? "dark" : "light";
+  savePreferencesToLocalStorage(currentTheme as "system" | "light" | "dark");
 }
 
 // add event listener to the theme toggle button
-export const themeToggleBtn = document.getElementById("theme-toggle-btn");
-if (themeToggleBtn) {
-  themeToggleBtn.addEventListener("click", toggleTheme);
+export function initializeThemeToggle(): void {
+  // get the theme from localStorage
+  const preferences = getPreferencesFromLocalStorage(); 
+  // set the theme based on the preferences
+  if(preferences.theme === "system"){
+    // check if the system theme is dark
+    if(window.matchMedia("(prefers-color-scheme: dark)").matches){
+      document.body.classList.add("dark");
+    }else {
+      document.body.classList.remove('dark');
+    }
+  } else if(preferences.theme === "light"){
+    document.body.classList.remove("dark");
+  } else if(preferences.theme === "dark"){
+    document.body.classList.add("dark");
+  }
+
+  // update icons based on current theme state
+  updateThemeIcons();
+  
+  if(elements.themeToggleBtnDesktop){
+    (elements.themeToggleBtnDesktop as HTMLElement).addEventListener("click", toggleTheme);
+  }
+  if(elements.themeToggleBtnMobile){
+    (elements.themeToggleBtnMobile as HTMLElement).addEventListener("click", toggleTheme);
+  }
+
 }
 
 // render stats
@@ -74,20 +97,35 @@ export function renderStats(entries: Journal): void {
   // Render stats
   statsContainer.innerHTML = `
     <div class="stat-item">
+      <span class="stat-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-words-icon lucide-words"><path d="M4 12h16"/><path d="M4 18h4"/><path d="M4 6h16"/></svg>
+      </span>
       <span class="stat-value">${totalWords}</span>
       <span class="stat-label">Words</span>
     </div>
     <div class="stat-item">
+      <span class="stat-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-icon lucide-calendar"><rect width="20" height="18" x="2" y="4" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      </span>
       <span class="stat-value">${daysJournaled}</span>
       <span class="stat-label">Days</span>
     </div>
     <div class="stat-item">
+      <span class="stat-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-icon lucide-calendar"><rect width="20" height="18" x="2" y="4" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      </span>
       <span class="stat-value">${entriesThisYear}</span>
       <span class="stat-label">This Year</span>
     </div>
     <div class="stat-item">
+      <span class="stat-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-icon lucide-calendar"><rect width="20" height="18" x="2" y="4" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      </span>
+
+      <span class="stat-label">
       <span class="stat-value">${totalEntries}</span>
-      <span class="stat-label">Total Entries</span>
+      Total Entries
+      </span>
     </div>
   `;
 }
@@ -133,8 +171,12 @@ export function EntryPreview(entry: JournalEntry): void {
         </div>
         <div class="entry-card-footer">
             <p>${formatDate(new Date(entry.timestamp))}</p>
-            <button class="edit-btn">Edit</button>
-            <button class="delete-btn">Delete</button>
+            <button class="edit-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-icon lucide-pencil"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+            </button>
+            <button class="delete-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
         </div>
     `;
 
@@ -153,60 +195,73 @@ export function renderEntryForm(entry?: JournalEntry): void {
 
   // render entry form
   entryFormModal.innerHTML = entry
-    ? `
-        <h2>Edit Entry</h2>
-        <form id="entry-form">
-        <input type="hidden" name="entryId" value="${entry.id}">
-        <div class="form-group">    
-            <select name="mood" id="mood">
-                <option value="happy" ${entry.mood === 'happy' ? 'selected' : ''}>Happy</option>
-                <option value="sad" ${entry.mood === 'sad' ? 'selected' : ''}>Sad</option>
-                <option value="angry" ${entry.mood === 'angry' ? 'selected' : ''}>Angry</option>
-                <option value="bored" ${entry.mood === 'bored' ? 'selected' : ''}>Bored</option>
-                <option value="curious" ${entry.mood === 'curious' ? 'selected' : ''}>Curious</option>
-                <option value="excited" ${entry.mood === 'excited' ? 'selected' : ''}>Excited</option>
-                <option value="frustrated" ${entry.mood === 'frustrated' ? 'selected' : ''}>Frustrated</option>
-                <option value="confused" ${entry.mood === 'confused' ? 'selected' : ''}>Confused</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <input type="text" name="title" placeholder="Title" value="${entry.title}">
-        </div>
-        <div class="form-group">
-            <textarea name="content" placeholder="Content">
-            ${entry.content}
-            </textarea>
-        </div>
-        <div class="form-group">
-            <button type="submit">Save</button>
-        </div>
-        </form>
-    `
-    : `
-        <h2>Add Entry</h2>
-        <form id="entry-form">
-        <div class="form-group">
-            <select name="mood" id="mood">
-                <option value="happy">Happy</option>
-                <option value="sad">Sad</option>
-                <option value="angry">Angry</option>
-                <option value="bored">Bored</option>
-                <option value="curious">Curious</option>
-                <option value="excited">Excited</option>
-                <option value="frustrated">Frustrated</option>
-                <option value="confused">Confused</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <input type="text" name="title" placeholder="Title">
-        </div>
-        <div class="form-group">
-            <textarea name="content" placeholder="Content"></textarea>
-        </div>
-        <div class="form-group">
-            <button type="submit">Save</button>
-        </form>
-    `;
+  ? `<div class="modal-content">
+      <div class="modal-header">
+          <h2>Edit Entry</h2>
+          <button class="close-modal-btn" aria-label="Close">✕</button>
+      </div>
+      <form id="entry-form">
+      <input type="hidden" name="entryId" value="${entry.id}">
+      <div class="form-group">    
+          <label for="mood">How are you feeling?</label>
+          <select name="mood" id="mood">
+              <option value="happy" ${entry.mood === 'happy' ? 'selected' : ''}>😊 Happy</option>
+              <option value="sad" ${entry.mood === 'sad' ? 'selected' : ''}>😢 Sad</option>
+              <option value="angry" ${entry.mood === 'angry' ? 'selected' : ''}>😠 Angry</option>
+              <option value="bored" ${entry.mood === 'bored' ? 'selected' : ''}>😑 Bored</option>
+              <option value="curious" ${entry.mood === 'curious' ? 'selected' : ''}>🤔 Curious</option>
+              <option value="excited" ${entry.mood === 'excited' ? 'selected' : ''}>🤩 Excited</option>
+              <option value="frustrated" ${entry.mood === 'frustrated' ? 'selected' : ''}>😤 Frustrated</option>
+              <option value="confused" ${entry.mood === 'confused' ? 'selected' : ''}>😕 Confused</option>
+          </select>
+      </div>
+      <div class="form-group">
+          <label for="title">Title</label>
+          <input type="text" name="title" id="title" placeholder="Give your entry a title..." value="${entry.title}">
+      </div>
+      <div class="form-group">
+          <label for="content">What's on your mind?</label>
+          <textarea name="content" id="content" placeholder="Write your thoughts here..." rows="8">${entry.content}</textarea>
+      </div>
+      <div class="form-actions">
+          <button type="button" class="cancel-btn">Cancel</button>
+          <button type="submit" class="submit-btn">Save Entry</button>
+      </div>
+      </form>
+  </div>`
+  : `<div class="modal-content">
+      <div class="modal-header">
+          <h2>New Entry</h2>
+          <button class="close-modal-btn" aria-label="Close">✕</button>
+      </div>
+      <form id="entry-form">
+      <div class="form-group">
+          <label for="mood">How are you feeling?</label>
+          <select name="mood" id="mood">
+              <option value="happy">😊 Happy</option>
+              <option value="sad">😢 Sad</option>
+              <option value="angry">😠 Angry</option>
+              <option value="bored">😑 Bored</option>
+              <option value="curious">🤔 Curious</option>
+              <option value="excited">🤩 Excited</option>
+              <option value="frustrated">😤 Frustrated</option>
+              <option value="confused">😕 Confused</option>
+          </select>
+      </div>
+      <div class="form-group">
+          <label for="title">Title</label>
+          <input type="text" name="title" id="title" placeholder="Give your entry a title...">
+      </div>
+      <div class="form-group">
+          <label for="content">What's on your mind?</label>
+          <textarea name="content" id="content" placeholder="Write your thoughts here..." rows="8"></textarea>
+      </div>
+      <div class="form-actions">
+          <button type="button" class="cancel-btn">Cancel</button>
+          <button type="submit" class="submit-btn">Save Entry</button>
+      </div>
+      </form>
+  </div>`;
 }
 
 // show or hide form modal
@@ -229,7 +284,10 @@ export function hideFormModal(): void {
 // handle search
 // handle search
 export function handleSearch(event: Event): void {
-  const searchInput = event.target as HTMLInputElement;
+  // Get the input that triggered the search (could be desktop or mobile)
+  const searchInput = (event.target as HTMLInputElement).id === 'search-input-mobile'
+    ? document.getElementById('search-input-mobile') as HTMLInputElement
+    : elements.searchInput as HTMLInputElement;
   const searchValue = searchInput.value.toLowerCase().trim();
 
   // Get current mood filter value
@@ -386,5 +444,29 @@ export function showToast(message: string): void {
     closeBtn.addEventListener("click", () => {
       toast.remove();
     });
+  }
+}
+
+
+
+
+// === helper functions ===
+// Helper function to update theme icons
+function updateThemeIcons(): void {
+  const sunIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-icon lucide-sun"><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"/><path d="M12 1v2"/><path d="M12 21v2"/><path d="M4.22 4.22l1.42 1.42"/><path d="M18.36 18.36l1.42 1.42"/><path d="M1 12h2"/><path d="M21 12h2"/><path d="M4.22 19.78l1.42-1.42"/><path d="M18.36 5.64l1.42-1.42"/></svg>';
+
+  const moonIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon-icon lucide-moon"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>';
+
+  // Icon should show what you'll switch TO, not current state
+  // If dark mode → show sun (to switch to light)
+  // If light mode → show moon (to switch to dark)
+  const isDark = document.body.classList.contains("dark");
+  const icon = isDark ? sunIcon : moonIcon;
+
+  if(elements.themeToggleBtnDesktop){
+    (elements.themeToggleBtnDesktop as HTMLElement).innerHTML = icon;
+  }
+  if(elements.themeToggleBtnMobile){
+    (elements.themeToggleBtnMobile as HTMLElement).innerHTML = icon;
   }
 }

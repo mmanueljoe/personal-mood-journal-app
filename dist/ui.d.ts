@@ -10,9 +10,11 @@ export declare const elements: {
     deleteBtn: HTMLElement | HTMLElement[] | null;
     searchInput: HTMLElement | HTMLElement[] | null;
     moodFilter: HTMLElement | HTMLElement[] | null;
+    themeToggleBtnDesktop: HTMLElement | HTMLElement[] | null;
+    themeToggleBtnMobile: HTMLElement | HTMLElement[] | null;
 };
 export declare function toggleTheme(): void;
-export declare const themeToggleBtn: HTMLElement | null;
+export declare function initializeThemeToggle(): void;
 export declare function renderStats(entries: Journal): void;
 export declare function renderEntriesList(entries: Journal): void;
 export declare function EntryPreview(entry: JournalEntry): void;

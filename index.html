@@ -8,19 +8,65 @@
   </head>
   <body>
     <div class="container">
+      <!-- header -->
       <header class="header">
-        <!-- header -->
         <h1>My Journal</h1>
-        <input
-          id="search-input"
-          type="search"
-          placeholder="Search entries..."
-        />
-        <button id="theme-toggle-btn"></button>
+        <!-- Desktop: Always visible -->
+        <div class="header-actions desktop-only">
+          <input
+            id="search-input"
+            type="search"
+            placeholder="Search entries..."
+          />
+          <button id="add-entry-btn">Add Entry</button>
+          <button id="theme-toggle-btn-desktop">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"/>
+              <path d="M12 1v2"/>
+              <path d="M12 21v2"/>
+              <path d="M4.22 4.22l1.42 1.42"/>
+              <path d="M18.36 18.36l1.42 1.42"/>
+              <path d="M1 12h2"/>
+              <path d="M21 12h2"/>
+              <path d="M4.22 19.78l1.42-1.42"/>
+              <path d="M18.36 5.64l1.42-1.42"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Mobile: Icons only -->
+        <div class="header-actions mobile-only">
+          <button id="search-toggle-btn" aria-label="Search Field Toggler">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-icon lucide-search"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          </button>
+          <button id="theme-toggle-btn-mobile" aria-label="Theme Toggle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"/>
+              <path d="M12 1v2"/>
+              <path d="M12 21v2"/>
+              <path d="M4.22 4.22l1.42 1.42"/>
+              <path d="M18.36 18.36l1.42 1.42"/>
+              <path d="M1 12h2"/>
+              <path d="M21 12h2"/>
+              <path d="M4.22 19.78l1.42-1.42"/>
+              <path d="M18.36 5.64l1.42-1.42"/>
+            </svg>
+          </button>
+        </div>
       </header>
 
+      <!-- Mobile: Search field hidden by default -->
+      <div id="mobile-search-container" class="hidden">
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <input id="search-input-mobile" type="search" placeholder="Search entries..." />
+          <button id="close-search-btn" aria-label="Close Search">✕</button>
+        </div>
+      </div>
+
       <!-- stats -->
-      <section class="stats"></section>
+      <section id="stats">
+        
+      </section>
 
       <!-- Mood filter -->
       <div class="mood-filter-container">
@@ -39,7 +85,9 @@
       </div>
 
       <!-- entries container -->
-      <main id="entries-container"></main>
+      <main id="entries-container">
+        
+      </main>
 
       <!-- add entry form -->
       <div class="add-entry-btn-container">
