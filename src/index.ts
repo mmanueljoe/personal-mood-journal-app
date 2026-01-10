@@ -38,17 +38,16 @@ function setupEventListeners(): void {
   // get entry form
   const entryFormModal = elements.entryFormModal as HTMLElement;
   if (entryFormModal) {
+    // Handle form submission
     entryFormModal.addEventListener("submit", (event: Event) => {
       event.preventDefault();
 
-      // the event.target is the form element
-      const target = event.target as HTMLElement;
       const form =
         event.target instanceof HTMLFormElement
           ? event.target
           : ((event.target as HTMLElement).closest("form") as HTMLFormElement);
 
-      if (form.tagName === "FORM") {
+      if (form && form.tagName === "FORM") {
         const formData = new FormData(form);
 
         // check if we're editing
@@ -84,16 +83,31 @@ function setupEventListeners(): void {
         ui.renderEntriesList(journal.getEntries());
         ui.hideFormModal();
       }
+    });
 
-      // Close button
-    if (target.classList.contains('close-modal-btn') || target.closest('.close-modal-btn')) {
+    // Handle close and cancel buttons using event delegation
+    entryFormModal.addEventListener("click", (event: Event) => {
+      const target = event.target as HTMLElement;
+      
+      // Close button (X in header)
+      if (target.classList.contains('close-modal-btn') || target.closest('.close-modal-btn')) {
+        event.preventDefault();
         ui.hideFormModal();
-    }
-    
-    // Cancel button
-    if (target.classList.contains('cancel-btn') || target.closest('.cancel-btn')) {
+        return;
+      }
+      
+      // Cancel button
+      if (target.classList.contains('cancel-btn') || target.closest('.cancel-btn')) {
+        event.preventDefault();
         ui.hideFormModal();
-    }
+        return;
+      }
+
+      // Close modal when clicking on backdrop (outside modal content)
+      if (target === entryFormModal) {
+        ui.hideFormModal();
+        return;
+      }
     });
   }
 
