@@ -3,6 +3,8 @@ import * as journal from './journal.js';
 import { getEntriesFromLocalStorage, saveEntriesToLocalStorage } from './storage.js';
 import { elements } from './ui.js';
 import { Mood } from './journal.js';
+import { debounce } from './utils.js';
+
 
 
 // on page load
@@ -12,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2.render entries list
     ui.renderEntriesList(entries);
+
+    // 3.render stats
+    ui.renderStats(entries);
 });
 
 // 3.set up all event listeners
@@ -22,7 +27,7 @@ function setupEventListeners(): void {
         addEntryBtn.addEventListener('click', () => {
             ui.showFormModal();
             ui.renderEntryForm();
-            ui.showToast('Entry added successfully');
+            // ui.showToast('Entry added successfully');
         });
     }
 
@@ -53,6 +58,7 @@ function setupEventListeners(): void {
                         mood: formData.get('mood') as Mood,
                     };
                     journal.updateEntry(entryId, updatedEntry);
+                    ui.renderStats(journal.getEntries());
                     ui.showToast('Entry updated successfully');
                 } else {
                     // create new entry
@@ -64,6 +70,7 @@ function setupEventListeners(): void {
                         timestamp: Date.now(),
                     };
                     journal.addEntry(entry);
+                    ui.renderStats(journal.getEntries());
                     ui.showToast('Entry added successfully');
                 }
                 ui.renderEntriesList(journal.getEntries());
@@ -95,18 +102,25 @@ function setupEventListeners(): void {
                         if(entry){
                             ui.showFormModal();
                             ui.renderEntryForm(entry);
-                            ui.showToast('Entry updated successfully');
+                            // ui.showToast('Entry updated successfully');
                         }
                     }
                 }
             }
 
             // check if delete button was clicked
-            if(target.classList.contains('delete-btn')) {
-                const entryCard = target.closest('.entry-card') as HTMLElement;
+            if(target.classList.contains('delete-btn') || target.closest('.delete-btn')) {
+                const deleteBtn = target.classList.contains('delete-btn')
+                ? target
+                : target.closest('.delete-btn') as HTMLElement;
+
+                const entryCard = deleteBtn.closest('.entry-card') as HTMLElement;
                 if(entryCard){
                     const entryId = entryCard.dataset.entryId as string;
                     if(entryId) {
+                        console.log('Delete clicked for entry:', entryId);
+
+
                         // show confirmation modal
                         ui.showConfirmationModal(entryId);
 
@@ -115,9 +129,51 @@ function setupEventListeners(): void {
             }
         });
     }
+
+    // handle search input
+    const searchInput = elements.searchInput as HTMLInputElement;
+    if(searchInput) {
+        const debouncedSearch = debounce((event: Event) =>{
+            ui.handleSearch(event);
+        }, 500);
+        searchInput.addEventListener('input', debouncedSearch as EventListener);
+    }
+
+    // handle mood filter
+    const moodFilter = elements.moodFilter as HTMLSelectElement;
+    if(moodFilter) {
+        moodFilter.addEventListener('change', (event: Event) => {
+            const select = event.target as HTMLSelectElement;
+            const selectedMood = select.value;
+
+            // clear search when filtering
+            // const searchInput = elements.searchInput as HTMLInputElement;
+            // if(searchInput){
+            //     searchInput.value = '';
+            // }
+
+            // remove search results indicator if it exists
+            const searchResultsIndicator = document.getElementById('search-results-indicator');
+            if(searchResultsIndicator){
+                searchResultsIndicator.remove();
+            }
+
+            // handle mood filter
+            if(selectedMood){
+                ui.handleMoodFilter(selectedMood as Mood);
+            } else {
+                ui.handleMoodFilter(null);
+            }
+
+            // update stats filtered by mood
+            const entries = selectedMood 
+            ? journal.filterEntries(selectedMood as Mood)
+            : journal.getEntries();
+            ui.renderStats(entries);
+        });
+    }
 }
-// when delete button is clicked:
-// 1.call deleteEntry()
+
 
 
 function initializeApp(): void {

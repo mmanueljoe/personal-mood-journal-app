@@ -113,6 +113,9 @@ export function deleteEntry(entryId: string): boolean {
 
 // filter entries
 export function filterEntries(mood: Mood): Journal {
+  // load existing entries
+  entries = getEntriesFromLocalStorage();
+
   // filter the entries by mood
   return entries.filter((e) => e.mood === mood);
 }

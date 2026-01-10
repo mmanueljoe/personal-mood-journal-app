@@ -1,6 +1,7 @@
 import { getElementsByType, debounce, formatDate } from "./utils.js";
-import type { Journal, JournalEntry } from "./journal.js";
+import { findByProperty, type Journal, type JournalEntry } from "./journal.js";
 import * as journal from "./journal.js";
+import { Mood } from "./journal.js";
 
 // elements
 export const elements = {
@@ -11,6 +12,8 @@ export const elements = {
   entryFormModal: getElementsByType("id", "entry-form-modal"),
   editBtn: getElementsByType("class", "edit-btn"),
   deleteBtn: getElementsByType("class", "delete-btn"),
+  searchInput: getElementsByType("id", "search-input"),
+  moodFilter: getElementsByType("id", "mood-filter"),
 };
 
 // theme toggle button
@@ -37,7 +40,57 @@ if (themeToggleBtn) {
 }
 
 // render stats
-function renderStats(stats: Journal): void {}
+export function renderStats(entries: Journal): void {
+  const statsContainer = elements.stats as HTMLElement;
+  if(!statsContainer) return;
+
+  // calculate stats
+  const totalEntries = entries.length;
+
+  // calculate total words (split by spaces and filter empty strings)
+  const totalWords = entries.reduce((sum, entry) => {
+    const words = entry.content.trim().split(/\s+/).filter(word => word.length > 0);
+    return sum + words.length;
+  }, 0);
+
+  // calculate unique days journaled
+  const uniqueDays = new Set(
+    entries.map(entry => {
+      const date = new Date(entry.timestamp);
+      return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    })
+  );
+  const daysJournaled = uniqueDays.size;
+
+
+  // calculate entries this year
+  const currentYear = new Date().getFullYear();
+  const entriesThisYear = entries.filter(entry => {
+    const entryYear = new Date(entry.timestamp).getFullYear();
+    return entryYear === currentYear;
+  }).length;
+
+
+  // Render stats
+  statsContainer.innerHTML = `
+    <div class="stat-item">
+      <span class="stat-value">${totalWords}</span>
+      <span class="stat-label">Words</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">${daysJournaled}</span>
+      <span class="stat-label">Days</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">${entriesThisYear}</span>
+      <span class="stat-label">This Year</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">${totalEntries}</span>
+      <span class="stat-label">Total Entries</span>
+    </div>
+  `;
+}
 
 // render entries list
 export function renderEntriesList(entries: Journal): void {
@@ -46,6 +99,16 @@ export function renderEntriesList(entries: Journal): void {
 
   // clear  entries container
   entriesContainer.innerHTML = "";
+
+  // show empty state if no entries
+  if(entries.length === 0){
+    entriesContainer.innerHTML = `
+      <div class="empty-state">
+        <p>No entries yet. Add your first entry to get started.</p>
+      </div>
+    `;
+    return;
+  }
 
   // render each entry
   entries.forEach((entry: JournalEntry) => {
@@ -96,14 +159,14 @@ export function renderEntryForm(entry?: JournalEntry): void {
         <input type="hidden" name="entryId" value="${entry.id}">
         <div class="form-group">    
             <select name="mood" id="mood">
-                <option value="happy">Happy</option>
-                <option value="sad">Sad</option>
-                <option value="angry">Angry</option>
-                <option value="bored">Bored</option>
-                <option value="curious">Curious</option>
-                <option value="excited">Excited</option>
-                <option value="frustrated">Frustrated</option>
-                <option value="confused">Confused</option>
+                <option value="happy" ${entry.mood === 'happy' ? 'selected' : ''}>Happy</option>
+                <option value="sad" ${entry.mood === 'sad' ? 'selected' : ''}>Sad</option>
+                <option value="angry" ${entry.mood === 'angry' ? 'selected' : ''}>Angry</option>
+                <option value="bored" ${entry.mood === 'bored' ? 'selected' : ''}>Bored</option>
+                <option value="curious" ${entry.mood === 'curious' ? 'selected' : ''}>Curious</option>
+                <option value="excited" ${entry.mood === 'excited' ? 'selected' : ''}>Excited</option>
+                <option value="frustrated" ${entry.mood === 'frustrated' ? 'selected' : ''}>Frustrated</option>
+                <option value="confused" ${entry.mood === 'confused' ? 'selected' : ''}>Confused</option>
             </select>
         </div>
         <div class="form-group">
@@ -164,18 +227,94 @@ export function hideFormModal(): void {
 }
 
 // handle search
-export function handleSearch(event: Event): void {}
+// handle search
+export function handleSearch(event: Event): void {
+  const searchInput = event.target as HTMLInputElement;
+  const searchValue = searchInput.value.toLowerCase().trim();
 
+  // Get current mood filter value
+  const moodFilter = elements.moodFilter as HTMLSelectElement;
+  const selectedMood = moodFilter?.value || null;
+
+  // Get entries (filtered by mood if filter is active)
+  let entries = journal.getEntries();
+  if (selectedMood) {
+    entries = journal.filterEntries(selectedMood as Mood);
+  }
+
+  // Get or create search results indicator
+  const entriesContainer = elements.entriesContainer as HTMLElement;
+  let searchResultsIndicator = document.getElementById('search-results-indicator');
+
+  // if no search value, render filtered entries
+  if(!searchValue){
+    renderEntriesList(entries);
+    if (searchResultsIndicator) {
+      searchResultsIndicator.remove();
+    }
+    return;
+  }
+
+  // get filtered entries (by search query)
+  const filteredEntries = entries.filter((entry: JournalEntry) => {
+    const titleMatch = entry.title.toLowerCase().includes(searchValue);
+    const contentMatch = entry.content.toLowerCase().includes(searchValue);
+    return titleMatch || contentMatch;
+  });
+
+  // after filtering, before rendering
+  if(filteredEntries.length === 0){
+    renderEntriesList([]);
+    let entriesContainer = elements.entriesContainer as HTMLElement;
+    entriesContainer.innerHTML = `
+      <div class="empty-state">
+        <p>No results found for "${searchInput.value}".</p>
+      </div>
+    `;
+    return;
+  }
+
+  // render filtered entries
+  renderEntriesList(filteredEntries);
+
+  // Show search results count
+  if (!searchResultsIndicator) {
+    searchResultsIndicator = document.createElement('div');
+    searchResultsIndicator.id = 'search-results-indicator';
+    searchResultsIndicator.classList.add('search-results-indicator');
+    entriesContainer.parentNode?.insertBefore(searchResultsIndicator, entriesContainer);
+  }
+  
+  searchResultsIndicator.textContent = `Found ${filteredEntries.length} result${filteredEntries.length !== 1 ? 's' : ''} for "${searchInput.value}"`;
+}
+
+// handle mood filter
+export function handleMoodFilter(mood: Mood | null): void {
+  // get all entries
+  const allEntries = journal.getEntries();
+
+  // if no mood selected, show all entries
+  if(!mood){
+    renderEntriesList(allEntries);
+    return;
+  }
+
+  // filter entries by mood
+  const filteredEntries = journal.filterEntries(mood);
+  renderEntriesList(filteredEntries);
+}
 // show confirmation modal
 export function showConfirmationModal(entryId: string): void {
   // create confirmation modal
   const confirmationModal = document.createElement("div");
   confirmationModal.classList.add("confirmation-modal");
   confirmationModal.innerHTML = `
+  <div class="confirmation-modal-content">
         <h2>Delete Entry</h2>
         <p>Are you sure you want to delete this entry?</p>
         <button class="confirm-btn">Yes</button>
         <button class="cancel-btn">No</button>
+    </div>
     `;
   document.body.appendChild(confirmationModal);
 
@@ -191,7 +330,11 @@ export function showConfirmationModal(entryId: string): void {
       hideConfirmationModal();
      // refresh entries list
       renderEntriesList(journal.getEntries());
-    // show toast notification
+
+      // render stats
+      renderStats(journal.getEntries());
+
+      // show toast notification
       showToast("Entry deleted successfully");
     });
   }

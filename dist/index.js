@@ -3,12 +3,15 @@ import * as journal from './journal.js';
 import { getEntriesFromLocalStorage, saveEntriesToLocalStorage } from './storage.js';
 import { elements } from './ui.js';
 import { Mood } from './journal.js';
+import { debounce } from './utils.js';
 // on page load
 // 1.load entries from storage
 document.addEventListener('DOMContentLoaded', () => {
     const entries = journal.getEntries();
     // 2.render entries list
     ui.renderEntriesList(entries);
+    // 3.render stats
+    ui.renderStats(entries);
 });
 // 3.set up all event listeners
 function setupEventListeners() {
@@ -18,7 +21,7 @@ function setupEventListeners() {
         addEntryBtn.addEventListener('click', () => {
             ui.showFormModal();
             ui.renderEntryForm();
-            ui.showToast('Entry added successfully');
+            // ui.showToast('Entry added successfully');
         });
     }
     // get entry form
@@ -43,6 +46,7 @@ function setupEventListeners() {
                         mood: formData.get('mood'),
                     };
                     journal.updateEntry(entryId, updatedEntry);
+                    ui.renderStats(journal.getEntries());
                     ui.showToast('Entry updated successfully');
                 }
                 else {
@@ -55,6 +59,7 @@ function setupEventListeners() {
                         timestamp: Date.now(),
                     };
                     journal.addEntry(entry);
+                    ui.renderStats(journal.getEntries());
                     ui.showToast('Entry added successfully');
                 }
                 ui.renderEntriesList(journal.getEntries());
@@ -83,17 +88,21 @@ function setupEventListeners() {
                         if (entry) {
                             ui.showFormModal();
                             ui.renderEntryForm(entry);
-                            ui.showToast('Entry updated successfully');
+                            // ui.showToast('Entry updated successfully');
                         }
                     }
                 }
             }
             // check if delete button was clicked
-            if (target.classList.contains('delete-btn')) {
-                const entryCard = target.closest('.entry-card');
+            if (target.classList.contains('delete-btn') || target.closest('.delete-btn')) {
+                const deleteBtn = target.classList.contains('delete-btn')
+                    ? target
+                    : target.closest('.delete-btn');
+                const entryCard = deleteBtn.closest('.entry-card');
                 if (entryCard) {
                     const entryId = entryCard.dataset.entryId;
                     if (entryId) {
+                        console.log('Delete clicked for entry:', entryId);
                         // show confirmation modal
                         ui.showConfirmationModal(entryId);
                     }
@@ -101,9 +110,45 @@ function setupEventListeners() {
             }
         });
     }
+    // handle search input
+    const searchInput = elements.searchInput;
+    if (searchInput) {
+        const debouncedSearch = debounce((event) => {
+            ui.handleSearch(event);
+        }, 500);
+        searchInput.addEventListener('input', debouncedSearch);
+    }
+    // handle mood filter
+    const moodFilter = elements.moodFilter;
+    if (moodFilter) {
+        moodFilter.addEventListener('change', (event) => {
+            const select = event.target;
+            const selectedMood = select.value;
+            // clear search when filtering
+            // const searchInput = elements.searchInput as HTMLInputElement;
+            // if(searchInput){
+            //     searchInput.value = '';
+            // }
+            // remove search results indicator if it exists
+            const searchResultsIndicator = document.getElementById('search-results-indicator');
+            if (searchResultsIndicator) {
+                searchResultsIndicator.remove();
+            }
+            // handle mood filter
+            if (selectedMood) {
+                ui.handleMoodFilter(selectedMood);
+            }
+            else {
+                ui.handleMoodFilter(null);
+            }
+            // update stats filtered by mood
+            const entries = selectedMood
+                ? journal.filterEntries(selectedMood)
+                : journal.getEntries();
+            ui.renderStats(entries);
+        });
+    }
 }
-// when delete button is clicked:
-// 1.call deleteEntry()
 function initializeApp() {
     setupEventListeners();
 }

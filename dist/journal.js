@@ -76,6 +76,8 @@ export function deleteEntry(entryId) {
 }
 // filter entries
 export function filterEntries(mood) {
+    // load existing entries
+    entries = getEntriesFromLocalStorage();
     // filter the entries by mood
     return entries.filter((e) => e.mood === mood);
 }
