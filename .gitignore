@@ -33,3 +33,6 @@ node_modules
 .prettierrc
 
 # other files
+breakdown.md
+IMPLEMENTATION_CHECKLIST.md
+LAB_REVIEW.md

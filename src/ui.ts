@@ -4,6 +4,28 @@ import * as journal from "./journal.js";
 import { Mood } from "./journal.js";
 import { getPreferencesFromLocalStorage, savePreferencesToLocalStorage } from "./storage.js";
 
+// Helper function to escape HTML to prevent XSS and display issues
+function escapeHtml(text: string): string {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Helper function to get mood display info
+function getMoodDisplay(mood: Mood): { emoji: string; label: string } {
+  const moodMap: Record<Mood, { emoji: string; label: string }> = {
+    [Mood.HAPPY]: { emoji: "😊", label: "Happy" },
+    [Mood.SAD]: { emoji: "😢", label: "Sad" },
+    [Mood.ANGRY]: { emoji: "😠", label: "Angry" },
+    [Mood.BORED]: { emoji: "😑", label: "Bored" },
+    [Mood.CURIOUS]: { emoji: "🤔", label: "Curious" },
+    [Mood.EXCITED]: { emoji: "🤩", label: "Excited" },
+    [Mood.FRUSTRATED]: { emoji: "😤", label: "Frustrated" },
+    [Mood.CONFUSED]: { emoji: "😕", label: "Confused" },
+  };
+  return moodMap[mood] || { emoji: "😐", label: "Neutral" };
+}
+
 // elements
 export const elements = {
   themeToggleBtn: getElementsByType("id", "theme-toggle-btn"),
@@ -112,20 +134,17 @@ export function renderStats(entries: Journal): void {
     </div>
     <div class="stat-item">
       <span class="stat-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-icon lucide-calendar"><rect width="20" height="18" x="2" y="4" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
       </span>
       <span class="stat-value">${entriesThisYear}</span>
       <span class="stat-label">This Year</span>
     </div>
     <div class="stat-item">
       <span class="stat-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-icon lucide-calendar"><rect width="20" height="18" x="2" y="4" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
       </span>
-
-      <span class="stat-label">
       <span class="stat-value">${totalEntries}</span>
-      Total Entries
-      </span>
+      <span class="stat-label">Total Entries</span>
     </div>
   `;
 }
@@ -141,7 +160,7 @@ export function renderEntriesList(entries: Journal): void {
   // show empty state if no entries
   if(entries.length === 0){
     entriesContainer.innerHTML = `
-      <div class="empty-state">
+      <div class="empty-state empty-state-no-entries">
         <p>No entries yet. Add your first entry to get started.</p>
       </div>
     `;
@@ -161,21 +180,32 @@ export function EntryPreview(entry: JournalEntry): void {
   entryCard.classList.add("entry-card");
   entryCard.dataset.entryId = entry.id;
 
+  // Get mood display info
+  const moodDisplay = getMoodDisplay(entry.mood);
+  
+  // Truncate content for preview (limit to 150 characters)
+  const previewContent = entry.content.length > 150 
+    ? entry.content.substring(0, 150) + "..." 
+    : entry.content;
+
   entryCard.innerHTML = `
         <div class="entry-card-header">
             <h3>${entry.title}</h3>
-            <p>${entry.mood}</p>
+            <span class="mood-badge mood-${entry.mood}">
+              <span class="mood-emoji">${moodDisplay.emoji}</span>
+              <span class="mood-label">${moodDisplay.label}</span>
+            </span>
         </div>
         <div class="entry-card-body">
-            <p>${entry.content}</p>
+            <p>${escapeHtml(previewContent)}</p>
         </div>
         <div class="entry-card-footer">
             <p>${formatDate(new Date(entry.timestamp))}</p>
             <div class="entry-card-footer-actions">
-            <button class="edit-btn">
+            <button class="edit-btn" aria-label="Edit entry">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-icon lucide-pencil"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
             </button>
-              <button class="delete-btn">
+              <button class="delete-btn" aria-label="Delete entry">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               </button>
             </div>
@@ -327,7 +357,7 @@ export function handleSearch(event: Event): void {
     renderEntriesList([]);
     let entriesContainer = elements.entriesContainer as HTMLElement;
     entriesContainer.innerHTML = `
-      <div class="empty-state">
+      <div class="empty-state empty-state-no-results">
         <p>No results found for "${searchInput.value}".</p>
       </div>
     `;
@@ -446,6 +476,98 @@ export function showToast(message: string): void {
     closeBtn.addEventListener("click", () => {
       toast.remove();
     });
+  }
+}
+
+// Show entry detail modal
+export function showEntryDetailModal(entry: JournalEntry): void {
+  // Get mood display info
+  const moodDisplay = getMoodDisplay(entry.mood);
+  
+  // Create detail modal
+  const detailModal = document.createElement("div");
+  detailModal.classList.add("entry-detail-modal");
+  detailModal.id = "entry-detail-modal";
+  detailModal.innerHTML = `
+    <div class="entry-detail-content">
+      <div class="entry-detail-header">
+        <div class="entry-detail-title-section">
+          <h2>${entry.title}</h2>
+          <span class="mood-badge mood-${entry.mood}">
+            <span class="mood-emoji">${moodDisplay.emoji}</span>
+            <span class="mood-label">${moodDisplay.label}</span>
+          </span>
+        </div>
+        <button class="close-detail-modal-btn" aria-label="Close">✕</button>
+      </div>
+      <div class="entry-detail-body">
+        <div class="entry-detail-meta">
+          <p class="entry-detail-date">${formatDate(new Date(entry.timestamp))}</p>
+        </div>
+        <div class="entry-detail-text">
+          <p>${escapeHtml(entry.content)}</p>
+        </div>
+      </div>
+      <div class="entry-detail-footer">
+        <button class="edit-entry-from-detail-btn" data-entry-id="${entry.id}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+          Edit Entry
+        </button>
+        <button class="delete-entry-from-detail-btn" data-entry-id="${entry.id}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Delete Entry
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(detailModal);
+  
+  // Prevent body scroll when modal is open
+  document.body.classList.add("modal-open");
+  
+  // Close modal handlers
+  const closeBtn = detailModal.querySelector(".close-detail-modal-btn") as HTMLElement;
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      hideEntryDetailModal();
+    });
+  }
+  
+  // Close when clicking backdrop
+  detailModal.addEventListener("click", (e: Event) => {
+    const target = e.target as HTMLElement;
+    if (target === detailModal) {
+      hideEntryDetailModal();
+    }
+  });
+  
+  // Edit button handler
+  const editBtn = detailModal.querySelector(".edit-entry-from-detail-btn") as HTMLElement;
+  if (editBtn) {
+    editBtn.addEventListener("click", () => {
+      hideEntryDetailModal();
+      showFormModal();
+      renderEntryForm(entry);
+    });
+  }
+  
+  // Delete button handler
+  const deleteBtn = detailModal.querySelector(".delete-entry-from-detail-btn") as HTMLElement;
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", () => {
+      hideEntryDetailModal();
+      showConfirmationModal(entry.id);
+    });
+  }
+}
+
+// Hide entry detail modal
+export function hideEntryDetailModal(): void {
+  const detailModal = document.getElementById("entry-detail-modal");
+  if (detailModal) {
+    detailModal.remove();
+    document.body.classList.remove("modal-open");
   }
 }
 

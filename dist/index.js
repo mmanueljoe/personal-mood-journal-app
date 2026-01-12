@@ -17,14 +17,18 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 // 3.set up all event listeners
 function setupEventListeners() {
-    // get add entry button
+    // get add entry button - handle both desktop and mobile buttons
     const addEntryBtn = elements.addEntryBtn;
+    const addEntryBtnMobile = document.getElementById("add-entry-btn-mobile");
+    const handleAddEntry = () => {
+        ui.showFormModal();
+        ui.renderEntryForm();
+    };
     if (addEntryBtn) {
-        addEntryBtn.addEventListener("click", () => {
-            ui.showFormModal();
-            ui.renderEntryForm();
-            // ui.showToast('Entry added successfully');
-        });
+        addEntryBtn.addEventListener("click", handleAddEntry);
+    }
+    if (addEntryBtnMobile) {
+        addEntryBtnMobile.addEventListener("click", handleAddEntry);
     }
     // get entry form
     const entryFormModal = elements.entryFormModal;
@@ -95,41 +99,58 @@ function setupEventListeners() {
     // 1.show modal with existing entry data
     const entriesContainer = elements.entriesContainer;
     if (entriesContainer) {
-        // handle click on edit/delete buttons
+        // handle click on edit/delete buttons and entry cards
         entriesContainer.addEventListener("click", (event) => {
             const target = event.target;
-            // check if edit button was clicked
-            if (target.classList.contains("edit-btn")) {
-                // find the entry card that contains this button
-                const entryCard = target.closest(".entry-card");
-                if (entryCard) {
-                    // get the entry id from data attribute
-                    const entryId = entryCard.dataset.entryId;
-                    if (entryId) {
-                        // find the entry
-                        const entries = journal.getEntries();
-                        const entry = entries.find((e) => e.id === entryId);
-                        if (entry) {
-                            ui.showFormModal();
-                            ui.renderEntryForm(entry);
-                            // ui.showToast('Entry updated successfully');
+            // Prevent card click when clicking on buttons or their children
+            if (target.classList.contains("edit-btn") ||
+                target.classList.contains("delete-btn") ||
+                target.closest(".edit-btn") ||
+                target.closest(".delete-btn") ||
+                target.closest(".entry-card-footer-actions")) {
+                // Handle edit button click
+                if (target.classList.contains("edit-btn") ||
+                    target.closest(".edit-btn")) {
+                    const entryCard = target.closest(".entry-card");
+                    if (entryCard) {
+                        const entryId = entryCard.dataset.entryId;
+                        if (entryId) {
+                            const entries = journal.getEntries();
+                            const entry = entries.find((e) => e.id === entryId);
+                            if (entry) {
+                                ui.showFormModal();
+                                ui.renderEntryForm(entry);
+                            }
                         }
                     }
+                    return; // Prevent card click
                 }
+                // Handle delete button click
+                if (target.classList.contains("delete-btn") ||
+                    target.closest(".delete-btn")) {
+                    const deleteBtn = target.classList.contains("delete-btn")
+                        ? target
+                        : target.closest(".delete-btn");
+                    const entryCard = deleteBtn.closest(".entry-card");
+                    if (entryCard) {
+                        const entryId = entryCard.dataset.entryId;
+                        if (entryId) {
+                            ui.showConfirmationModal(entryId);
+                        }
+                    }
+                    return; // Prevent card click
+                }
+                return; // Prevent card click for any button action
             }
-            // check if delete button was clicked
-            if (target.classList.contains("delete-btn") ||
-                target.closest(".delete-btn")) {
-                const deleteBtn = target.classList.contains("delete-btn")
-                    ? target
-                    : target.closest(".delete-btn");
-                const entryCard = deleteBtn.closest(".entry-card");
-                if (entryCard) {
-                    const entryId = entryCard.dataset.entryId;
-                    if (entryId) {
-                        console.log("Delete clicked for entry:", entryId);
-                        // show confirmation modal
-                        ui.showConfirmationModal(entryId);
+            // Handle entry card click (to show detail view)
+            const entryCard = target.closest(".entry-card");
+            if (entryCard) {
+                const entryId = entryCard.dataset.entryId;
+                if (entryId) {
+                    const entries = journal.getEntries();
+                    const entry = entries.find((e) => e.id === entryId);
+                    if (entry) {
+                        ui.showEntryDetailModal(entry);
                     }
                 }
             }

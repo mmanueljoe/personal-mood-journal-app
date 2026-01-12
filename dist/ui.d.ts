@@ -25,4 +25,6 @@ export declare function handleSearch(event: Event): void;
 export declare function handleMoodFilter(mood: Mood | null): void;
 export declare function showConfirmationModal(entryId: string): void;
 export declare function showToast(message: string): void;
+export declare function showEntryDetailModal(entry: JournalEntry): void;
+export declare function hideEntryDetailModal(): void;
 //# sourceMappingURL=ui.d.ts.map
